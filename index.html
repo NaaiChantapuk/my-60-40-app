@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>60/40 By Naai</title>
+    
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-action-group">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" id="theme-icon">🌙</button>
+        <button class="global-calc-trigger" onclick="toggleMiniCalculator()"></button>
+    </div>
+
+    <h1 class="app-title">60/40<br><span class="subtitle">By Naai</span></h1>
+
+    <div class="global-quota-bar">
+        📢 สิทธิ์รัฐวันนี้เหลือ: <span id="global-daily-left" class="quota-red-num">0.00</span> บาท
+    </div>
+
+    <div id="main-menu" class="page active">
+        <div class="countdown-widget">
+            <div id="current-date" class="date-text">กำลังโหลดวันที่...</div>
+            <div class="timer-wrapper">
+                <span class="timer-label">สิทธิ์วันนี้ใช้ได้อีก:</span>
+                <span id="countdown-timer" class="timer-clock">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="menu-grid">
+            <button class="menu-btn" onclick="switchPage('calc-page')">
+                <div class="icon-wrapper">⚡</div>
+                <div class="btn-text-group">
+                    <span class="btn-title">คำนวณการใช้จ่าย</span>
+                    <span class="btn-desc">หักส่วนต่างสิทธิ์ 60/40</span>
+                </div>
+            </button>
+            <button class="menu-btn" onclick="switchPage('daily-page')">
+                <div class="icon-wrapper">📅</div>
+                <div class="btn-text-group">
+                    <span class="btn-title">ยอดคงเหลือรายวัน</span>
+                    <span class="btn-desc">เช็คโควตาสิทธิ์ที่ใช้ได้วันนี้</span>
+                </div>
+            </button>
+            <button class="menu-btn" onclick="switchPage('monthly-page')">
+                <div class="icon-wrapper">📊</div>
+                <div class="btn-text-group">
+                    <span class="btn-title">สรุปยอดของเดือนนี้</span>
+                    <span class="btn-desc">ดูประวัติรวมและสิทธิ์ที่เหลือ</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <div id="calc-page" class="page">
+        <div class="page-header">
+            <button class="back-btn" onclick="switchPage('main-menu')">← หน้าหลัก</button>
+            <h3>คำนวณการใช้จ่าย</h3>
+        </div>
+        
+        <div class="mode-tab-container">
+            <button id="tab-normal" class="tab-btn active" onclick="setCalcMode('normal')">คำนวณปกติ</button>
+            <button id="tab-reverse" class="tab-btn" onclick="setCalcMode('reverse')">คำนวณย้อนกลับ</button>
+        </div>
+        
+        <div class="input-card">
+            <div id="wrapper-normal-input">
+                <div class="input-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label for="price" style="margin: 0;">ราคาสินค้าเต็ม (บาท)</label>
+                        <button type="button" class="scan-trigger-btn" onclick="startScanner()">📸 สแกนบาร์โค้ด</button>
+                    </div>
+                    
+                    <div id="scanner-container" style="display: none;">
+                        <div id="interactive-reader"></div>
+                        <button type="button" class="scan-close-btn" onclick="stopScanner()">ปิดกล้องสแกน</button>
+                    </div>
+
+                    <input type="number" id="price" inputmode="decimal" placeholder="0.00">
+                </div>
+                
+                <div class="input-group" style="margin-top: 15px;">
+                    <label for="note">บันทึกช่วยจำ (เช่น เซเว่น, ของกิน)</label>
+                    <input type="text" id="note" placeholder="ใส่โน้ตสั้นๆ (ไม่ใส่ก็ได้)">
+                </div>
+                <button id="normal-action-btn" class="action-btn" style="margin-top: 15px;" onclick="processCalculation()">คำนวณและบันทึกยอด</button>
+            </div>
+
+            <div id="wrapper-reverse-input" style="display: none;">
+                <div class="reverse-field-group">
+                    <label for="rev-product-price" style="color: var(--color-blue);">ราคาสินค้าเต็มที่จะซื้อเพิ่ม (บาท)</label>
+                    <input type="number" id="rev-product-price" inputmode="decimal" placeholder="0.00" oninput="processReverseCalculation()">
+                </div>
+                
+                <div class="reverse-divider-text"><span>ผลลัพธ์ประมาณการเงินสด (ไม่บันทึก)</span></div>
+
+                <div class="rt-result-container">
+                    <div class="rt-row">
+                        <span>💵 ต้องจ่ายเงินสดเองทั้งหมด:</span>
+                        <span id="rt-user-deposit" class="rt-val blue" style="font-size: 1.6rem;">0.00</span>
+                    </div>
+                    <div class="res-divider" style="margin: 4px 0;"></div>
+                    <div class="rt-row">
+                        <span>🏛️ ดึงสิทธิ์รัฐมาช่วยออก:</span>
+                        <span id="rt-gov-share" class="rt-val green">0.00</span>
+                    </div>
+                    
+                    <div id="rt-warning-box" class="rt-warning" style="display: none;">
+                        <div class="warn-title">⚠️ สิทธิ์รัฐวันนี้ไม่พอหักเต็ม 60% แล้ว!</div>
+                        <div class="warn-detail">
+                            • ดึงใช้สิทธิ์รัฐได้อีกเพียง: <span id="warn-gov-left" style="text-decoration: underline;">0.00</span> บาท (จนหมดโควตา)<br>
+                            • ส่วนต่างที่เกินมาคุณต้องออกเป็นเงินสดเองทั้งหมด
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-box-wrapper" id="calc-result-wrapper" style="display: none;">
+            <div class="result-box" id="calc-result">
+                <div class="res-row">
+                    <span id="res-label-gov">รัฐช่วยออก (60%)</span>
+                    <span id="res-gov" class="green">0.00</span>
+                </div>
+                <div class="res-divider"></div>
+                <div class="res-row highlight">
+                    <span id="res-label-user">คุณจ่ายจริง (40%)</span>
+                    <span id="res-user" class="blue">0.00</span>
+                </div>
+                <div class="success-badge">
+                    <span class="sparkle">✨</span> บันทึกเข้าคลังข้อมูลแล้ว
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="daily-page" class="page">
+        <div class="page-header">
+            <button class="back-btn" onclick="switchPage('main-menu')">← หน้าหลัก</button>
+            <h3>ยอดคงเหลือรายวัน</h3>
+        </div>
+        
+        <div class="status-card">
+            <div class="status-label">สิทธิ์รัฐช่วยวันนี้ที่ใช้ไป</div>
+            <div class="status-value-main" id="daily-used">0.00 <span class="max-val">/ 200 บาท</span></div>
+            
+            <div class="progress-container">
+                <div id="daily-progress" class="progress-fill-bar"></div>
+            </div>
+            
+            <div class="allowance-box">
+                <div class="allowance-label">วงเงินรวมที่คุณเดินไปซื้อได้อีกวันนี้</div>
+                <div class="allowance-val" id="daily-allowance">0.00 <span>บาท</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="monthly-page" class="page">
+        <div class="page-header">
+            <button class="back-btn" onclick="switchPage('main-menu')">← หน้าหลัก</button>
+            <h3>สรุปยอดของเดือนนี้</h3>
+        </div>
+        
+        <div class="monthly-grid">
+            <div class="mini-card">
+                <span class="card-title">รัฐช่วยไปแล้ว</span>
+                <span id="monthly-gov-used" class="card-val">0.00</span>
+                <span class="card-limit">จาก 1,000 บ.</span>
+            </div>
+            <div class="mini-card">
+                <span class="card-title">สิทธิ์รัฐที่เหลือ</span>
+                <span id="monthly-gov-remain" class="card-val green">1,000.00</span>
+                <span class="card-limit">บาท</span>
+            </div>
+        </div>
+
+        <div class="status-card" style="margin-top: 15px;">
+            <div class="status-label">ยอดสะสมรวมที่คุณควักกระเป๋าจ่ายเอง</div>
+            <div class="status-value-main blue" style="font-size: 2rem;" id="monthly-user-total">0.00 <span class="max-val">บาท</span></div>
+        </div>
+
+        <div class="history-section">
+            <div class="history-header">ประวัติการคำนวณคราบผม</div>
+            <div id="history-list" class="history-list">
+                <div class="no-history">ยังไม่มีประวัติการบันทึกคราบผม</div>
+            </div>
+        </div>
+
+        <button class="reset-btn" onclick="clearData()">ล้างประวัติข้อมูลทั้งหมด</button>
+    </div>
+</div>
+
+<div id="mini-calculator-modal" class="calc-modal">
+    <div class="calc-modal-content">
+        <div class="calc-modal-header">
+            <span>เครื่องคิดเลขรวมราคาสินค้า</span>
+            <button class="calc-close-btn" onclick="toggleMiniCalculator()">✕</button>
+        </div>
+        <input type="text" id="calc-display" readonly placeholder="0">
+        <div class="calc-keyboard">
+            <button class="calc-key op-key" onclick="pressCalcKey('C')">C</button>
+            <button class="calc-key op-key" onclick="pressCalcKey('/')">÷</button>
+            <button class="calc-key op-key" onclick="pressCalcKey('*')">×</button>
+            <button class="calc-key op-key" onclick="pressCalcKey('-')">-</button>
+            
+            <button class="calc-key" onclick="pressCalcKey('7')">7</button>
+            <button class="calc-key" onclick="pressCalcKey('8')">8</button>
+            <button class="calc-key" onclick="pressCalcKey('9')">9</button>
+            <button class="calc-key op-key" onclick="pressCalcKey('+')">+</button>
+            
+            <button class="calc-key" onclick="pressCalcKey('4')">4</button>
+            <button class="calc-key" onclick="pressCalcKey('5')">5</button>
+            <button class="calc-key" onclick="pressCalcKey('6')">6</button>
+            <button class="calc-key equal-key" onclick="pressCalcKey('=')">=</button>
+            
+            <button class="calc-key" onclick="pressCalcKey('1')">1</button>
+            <button class="calc-key" onclick="pressCalcKey('2')">2</button>
+            <button class="calc-key" onclick="pressCalcKey('3')">3</button>
+            
+            <button class="calc-key zero-key" onclick="pressCalcKey('0')">0</button>
+            <button class="calc-key" onclick="pressCalcKey('.')">.</button>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
